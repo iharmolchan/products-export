@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+    <types:catalog>
+        <types:type name="ProductCsv" format="csv">
+            <types:shape format="raml">
+                <![CDATA[#%RAML 1.0 DataType
+                    type: array
+                    items:
+                        properties:
+                            id:
+                                type: string
+                            name:
+                                type: string
+                            description:
+                                type: string
+                            height:
+                                type: number
+                            width:
+                                type: number
+                            depth:
+                                type: number
+                            weight:
+                                type: number
+                ]]>
+            </types:shape>
+        </types:type>
+        <types:type name="ProductValidation" format="java">
+            <types:shape format="raml">
+                <![CDATA[#%RAML 1.0 DataType
+                    type: object
+                    properties:
+                        height:
+                            type: boolean
+                        width:
+                            type: boolean
+                        depth:
+                            type: boolean
+                        weight:
+                            type: boolean
+                ]]>
+            </types:shape>
+        </types:type>
+    </types:catalog>
+    <types:enrichment select="#c39decf2-5c7f-4592-a3ef-0888eaa10f32">
+        <types:processor-declaration>
+            <types:output-event>
+                <types:message>
+                    <types:payload type="ProductCsv"/>
+                </types:message>
+            </types:output-event>
+        </types:processor-declaration>
+    </types:enrichment>
+    <types:enrichment select="#683a9745-64a8-4137-9d5d-cf9f913d6242"/>
+    <types:enrichment select="#97d8aea1-4a2c-44ed-b0c8-6d9fffea79a5">
+        <types:processor-declaration>
+            <types:output-event>
+                <types:variables>
+                    <types:variable name="validation" type="ProductValidation"/>
+                </types:variables>
+            </types:output-event>
+        </types:processor-declaration>
+    </types:enrichment>
+</types:mule>

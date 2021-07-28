@@ -1,0 +1,149 @@
+#%RAML 1.0
+---
+title: Products transfer API
+baseUri: http://localhost:8081/{version}
+version: v1
+
+securitySchemes:
+  basic:
+    description: |
+      This API supports Basic Authentication.
+    type: Basic Authentication
+
+/products:
+  post:
+    description: Saves products to the SFTP system as csv file
+    responses:
+      201:
+        body:
+          application/json:
+            type: |
+              {
+                "type": "object",
+                "properties": {
+                  "filesNames": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }     
+              }
+            example: |
+              {
+                "filesNames": [
+                    "1_product1_2020-07-20T10:00:00+00:00.csv",
+                    "2_product2_2020-07-20T10:00:00+00:00.csv"
+                ]
+              }
+      400:
+        body:
+          application/json:
+            type: |
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            example: |
+              {"message": "Some error"}
+      500:
+        body:
+          application/json:
+            type: |
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            example: |
+              {"message": "Bad gateway"}
+    body:
+      application/json:
+        type: |
+          {
+            "type": "object",
+            "properties": {
+              "importDate": {
+                "type": "string",
+                "required": true
+              },
+              "products": {
+                "type": "array",
+                "requred": true,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "number",
+                      "required": true
+                    },
+                    "productName": {
+                      "type": "string",
+                      "required": true
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "object",
+                      "properties": {
+                        "height": {
+                          "type": "number"
+                        },
+                        "width": {
+                          "type": "number"
+                        },
+                        "depth": {
+                          "type": "number"
+                        },
+                        "weight": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "height",
+                        "width",
+                        "depth",
+                        "weight"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        example: |
+          {
+            "importDate": "2020-07-20T10:00:00+00:00",
+            "products": [
+              {
+                "id": 1,
+                "productName": "product1",
+                "description": "some description",
+                "details": {
+                  "height": 10.0,
+                  "width": 10.0,
+                  "depth": 10.0,
+                  "weight": 10.0
+                }
+              },
+              {
+                "id": 2,
+                "productName": "product2",
+                "description": "some description",
+                "details": {
+                  "height": 10.0,
+                  "width": 10.0,
+                  "depth": 10.0,
+                  "weight": 10.0
+                }
+              }
+            ]
+          }

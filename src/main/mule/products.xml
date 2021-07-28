@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+      xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+      http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+      http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd
+      http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+      http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+      http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd">
+    <http:listener-config name="products-httpListenerConfig">
+        <http:listener-connection host="${server.host}" port="${server.port}"/>
+    </http:listener-config>
+    <apikit:config name="products-config" api="products.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" parser="AMF"/>
+    <sftp:config name="SFTP_Config" doc:name="SFTP Config" doc:id="d33c4b6a-ee57-47e0-9bd3-8db72218c0f4">
+        <sftp:connection host="${sftp.host}" port="${sftp.port}" username="${sftp.username}" password="${sftp.password}"/>
+    </sftp:config>
+    <configuration-properties doc:name="Configuration properties" doc:id="e9da16e7-0877-4aa7-8e37-3c96b9e487a8" file="application.yaml"/>
+
+    <flow name="products-main">
+        <http:listener config-ref="products-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="products-config"/>
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+                              xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: error.description}]]>
+                        </ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[400]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+                              xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+                              xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]>
+                        </ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+                              xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]>
+                        </ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+                              xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]>
+                        </ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+                              xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]>
+                        </ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="products-console">
+        <http:listener config-ref="products-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="products-config"/>
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+                              xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: error.description}]]>
+                        </ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[404]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="post:\products:application\json:products-config">
+        <logger level="INFO" doc:name="Logger" doc:id="a4d2914e-f3b3-48cf-9def-35cf7d6c1349"
+                message="Starting pructs transfer to sftp server:  #[payload]"/>
+        <set-variable value="#[output application/java
+---
+[]]" doc:name="Files Names" doc:id="e6866b3e-982e-4a63-a93f-0731f5bf3487" variableName="fileNames"/>
+        <set-variable value="#[output application/java
+---
+payload.importDate]" doc:name="Set Variable" doc:id="77dc7b2c-f59e-4b78-9790-36fda1fd67c7" variableName="importDate"/>
+        <foreach doc:name="Iterate products" doc:id="8a0adac4-ad5b-449a-8e01-db5cded1cd03"
+                 collection="#[payload.products]">
+            <logger level="INFO" doc:name="Logger" doc:id="c5589815-db39-4afd-bc49-4a99702a1561"
+                    message='Saving product to the sftp server:  #[payload]'/>
+            <logger level="INFO" doc:name="Logger" doc:id="553eb926-e9d8-4609-98fa-731f71d4aeb3"
+                    message="Validating product"/>
+            <choice doc:name="Choice" doc:id="4626064b-c80a-48a5-a312-e7c703fb325a">
+                <when expression="#[payload.details != null]">
+                    <ee:transform doc:name="Validate Product" doc:id="97d8aea1-4a2c-44ed-b0c8-6d9fffea79a5">
+                        <ee:message>
+                        </ee:message>
+                        <ee:variables>
+                            <ee:set-variable variableName="nonValidFields"><![CDATA[%dw 2.0
+output application/java
+import keySet from dw::core::Objects
+---
+keySet (
+	{
+		height: payload.details.height > 0,
+		width: payload.details.width > 0,
+		depth: payload.details.depth > 0,
+		weight: payload.details.weight > 0
+	} filterObject ((value, key) -> !value)
+) default []]]>
+                            </ee:set-variable>
+                        </ee:variables>
+                    </ee:transform>
+                </when>
+                <otherwise>
+                    <set-variable value="#[output application/java
+---
+[]]" doc:name="Set Non Valid Product Fields" doc:id="8182d841-3369-41d3-b2da-76e2325eee44"
+                                  variableName="nonValidFields"/>
+                </otherwise>
+            </choice>
+            <choice doc:name="Choice" doc:id="6d086f41-6175-4411-a07e-171b2b7b57e3">
+                <when expression="#[sizeOf(vars.nonValidFields) &gt; 0]">
+                    <raise-error doc:name="Raise error" doc:id="c3303b93-4a72-42df-8301-fc34651d8c94"
+                                 type="PRECONDITIONS:INCORRECT_FIELD"
+                                 description="#[output application/java --- &quot;Field(s) $(vars.nonValidFields joinBy(', ')) value(s) must be greater than 0.&quot;]"/>
+                </when>
+            </choice>
+            <set-variable value='#[output application/java
+---
+payload.id as String ++ "_" ++ payload.productName ++ "_" ++ vars.importDate ++ ".csv"]' doc:name="FileName"
+                          doc:id="f5e4d899-75da-4506-aee4-52b5644fbd18" variableName="fileName"/>
+            <logger level="INFO" doc:name="Logger" doc:id="ad037dec-d553-459e-9e46-ce2f5b98a66e"
+                    message="Generated file name: #[vars.fileName]"/>
+            <ee:transform doc:name="Convert product to CSV" doc:id="c39decf2-5c7f-4592-a3ef-0888eaa10f32">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/csv headerLineNumber = 0 , header = true , separator = ";"
+---
+{
+	id: payload.id as String default "",
+	name: payload.productName default "",
+	description: payload.description default "",
+	height: payload.details.height as String default "",
+	width: payload.details.width as String default "",
+	depth: payload.details.depth as String default "",
+	weight: payload.details.weight as String default ""
+}]]>
+                    </ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <sftp:write doc:name="Write" doc:id="91764999-0890-4913-9935-051b3a340ab2" config-ref="SFTP_Config" path='#[output application/java
+---
+p("sftp.path") ++ "/" ++ vars.fileName]'/>
+            <logger level="INFO" doc:name="Logger" doc:id="39f63f6c-3949-49ae-b020-b34647373682"
+                    message="File #[vars.fileName] has been saved."/>
+            <ee:transform doc:name="Transform Message" doc:id="683a9745-64a8-4137-9d5d-cf9f913d6242">
+                <ee:message>
+                </ee:message>
+                <ee:variables>
+                    <ee:set-variable variableName="fileNames"><![CDATA[%dw 2.0
+output application/json
+---
+vars.fileNames << vars.fileName]]>
+                    </ee:set-variable>
+                </ee:variables>
+            </ee:transform>
+        </foreach>
+        <set-payload value="#[output application/json
+---
+{
+	filesNames: vars.fileNames
+}]" doc:name="Set Payload" doc:id="267e6582-6fc5-457c-bfa9-0702dec8994b"/>
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate"
+                                doc:id="0d939d5d-efc5-4865-8341-5d32fbc61ea3" type="PRECONDITIONS:INCORRECT_FIELD">
+                <logger level="INFO" doc:name="Logger" doc:id="41e78187-2973-4c83-a02c-f3c04bfbaa4a"
+                        message="Error arised. Deleting already saved files: #[vars.fileNames]"/>
+                <foreach doc:name="For Each" doc:id="1a0c81b6-fc20-4c52-b4e2-c396eb30141f"
+                         collection="#[vars.fileNames]">
+                    <sftp:delete doc:name="Delete" doc:id="4c18b545-7eae-457d-978c-3a5de710070c"
+                                 config-ref="SFTP_Config" path='#[output application/java
+---
+p("sftp.path") ++ "/" ++ payload]'/>
+                </foreach>
+                <ee:transform doc:name="Set Error Message" doc:id="941c7eeb-d8ef-470c-aee0-ba5c15102aef"
+                              xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: error.description}]]>
+                        </ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[400]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+</mule>

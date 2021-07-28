@@ -1,0 +1,10 @@
+server:
+  host: "0.0.0.0"
+  port: "8081"
+  
+sftp:
+  host: "localhost"
+  port: "3022" 
+  username: "sftp_user"
+  password: "test"
+  path: "/unity"
