@@ -249,7 +249,7 @@ vars.fileNames << vars.fileName]]>
 }]" doc:name="Set Payload" doc:id="267e6582-6fc5-457c-bfa9-0702dec8994b"/>
         <error-handler>
             <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate"
-                                doc:id="0d939d5d-efc5-4865-8341-5d32fbc61ea3" type="PRECONDITIONS:INCORRECT_FIELD">
+                                doc:id="0d939d5d-efc5-4865-8341-5d32fbc61ea3" type="ANY">
                 <logger level="INFO" doc:name="Logger" doc:id="41e78187-2973-4c83-a02c-f3c04bfbaa4a"
                         message="Error arised. Deleting already saved files: #[vars.fileNames]"/>
                 <foreach doc:name="For Each" doc:id="1a0c81b6-fc20-4c52-b4e2-c396eb30141f"
@@ -270,7 +270,7 @@ output application/json
                         </ee:set-payload>
                     </ee:message>
                     <ee:variables>
-                        <ee:set-variable variableName="httpStatus"><![CDATA[400]]></ee:set-variable>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[if (error.errorType.asString ~= 'PRECONDITIONS:INCORRECT_FIELD') 400 else 500]]></ee:set-variable>
                     </ee:variables>
                 </ee:transform>
             </on-error-propagate>
