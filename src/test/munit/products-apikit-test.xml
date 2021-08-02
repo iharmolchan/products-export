@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd ">
+<mule xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd 
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd">
     <munit:config name="products-apikit-test.xml" />
     <http:request-config name="HTTP_Request_Configuration" basePath="/api">
         <http:request-connection host="localhost" port="8081" />
     </http:request-config>
-    <munit:test name="post:\products:application\json:products-config-201-application\json-FlowTest" description="Verifying functionality of [post:\products:application\json:products-config-201-application\json]">
+	<munit:test name="post:\products:application\json:products-config-201-application\json-FlowTest" description="Verifying functionality of [post:\products:application\json:products-config-201-application\json]">
         <munit:enable-flow-sources>
             <munit:enable-flow-source value="products-main" />
             <munit:enable-flow-source value="post:\products:application\json:products-config" />
@@ -12,7 +13,7 @@
         <munit:behavior>
 			<munit-tools:mock-when doc:name="Mock when" doc:id="a2b9032b-4fa5-4fb9-a463-01f2803080ac" processor="sftp:write">
 				<munit-tools:with-attributes >
-					<munit-tools:with-attribute whereValue="91764999-0890-4913-9935-051b3a340ab2" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="6db976dc-f162-4aae-8d57-a4171cff317b" attributeName="doc:id" />
 				</munit-tools:with-attributes>
 			</munit-tools:mock-when>
         </munit:behavior>
@@ -35,7 +36,7 @@
         <munit:behavior>
 			<munit-tools:mock-when doc:name="Mock when" doc:id="d5307d00-0ca1-47c5-9214-4632c3849f6d" processor="sftp:write">
 				<munit-tools:with-attributes >
-					<munit-tools:with-attribute whereValue="91764999-0890-4913-9935-051b3a340ab2" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="6db976dc-f162-4aae-8d57-a4171cff317b" attributeName="doc:id" />
 				</munit-tools:with-attributes>
 			</munit-tools:mock-when>
         </munit:behavior>
@@ -60,11 +61,11 @@
         <munit:behavior>
 			<munit-tools:mock-when doc:name="Mock when" doc:id="c7df6075-c074-4732-8d39-7d2fc08fcecb" processor="sftp:write">
 				<munit-tools:with-attributes >
-					<munit-tools:with-attribute whereValue="91764999-0890-4913-9935-051b3a340ab2" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="6db976dc-f162-4aae-8d57-a4171cff317b" attributeName="doc:id" />
 				</munit-tools:with-attributes>
 				<munit-tools:then-return >
-					<munit-tools:error typeId="CONNECTIVITY" />
-				</munit-tools:then-return>
+                	<munit-tools:error typeId="HTTP:CONNECTIVITY" />
+            	</munit-tools:then-return>
 			</munit-tools:mock-when>
         </munit:behavior>
 		<munit:execution>

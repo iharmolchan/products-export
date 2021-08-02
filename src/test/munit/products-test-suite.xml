@@ -12,7 +12,7 @@
 		<munit:behavior >
 			<munit-tools:mock-when doc:name="Mock SFTP files upload" doc:id="49535be1-55ad-4395-bde8-63bfb49c8460" processor="sftp:write">
 				<munit-tools:with-attributes >
-					<munit-tools:with-attribute whereValue="91764999-0890-4913-9935-051b3a340ab2" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="6db976dc-f162-4aae-8d57-a4171cff317b" attributeName="doc:id" />
 				</munit-tools:with-attributes>
 			</munit-tools:mock-when>
 		</munit:behavior>
@@ -25,7 +25,7 @@
 		<munit:validation >
 			<munit-tools:verify-call doc:name="Verify SFTP calls" doc:id="9908f135-cff1-403f-8e49-6933b64fd760" processor="sftp:write" times="#[sizeOf(payload.filesNames default [])]">
 				<munit-tools:with-attributes >
-					<munit-tools:with-attribute whereValue="91764999-0890-4913-9935-051b3a340ab2" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="6db976dc-f162-4aae-8d57-a4171cff317b" attributeName="doc:id" />
 				</munit-tools:with-attributes>
 			</munit-tools:verify-call>
 			<munit-tools:assert-equals doc:name="Assert correct response" doc:id="eb55bd71-5cf9-4764-9513-5233f30df2fa" actual="#[payload]" message="Otput is not equal to expected list of filenames" expected="#[readUrl('classpath://products/products-valid-response.dwl')]"/>

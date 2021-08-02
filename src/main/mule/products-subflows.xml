@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<sub-flow name="export-products" doc:id="a47a76c5-ed24-41c2-8432-4de1b375c104" >
+		<try doc:name="Try" doc:id="64cd13fc-9b3f-4599-a279-6cfc0a494e45" >
+	        <logger level="INFO" doc:name="Logger" doc:id="5fd41424-56a9-4d5c-9ccb-222e1272e476"
+	                message="Starting pructs transfer to sftp server:  #[payload]"/>
+	        <set-variable value="#[output application/java
+---
+[]]" doc:name="Files Names" doc:id="8a9c9737-f8d3-4ff9-9f47-01aa6ccb091e" variableName="fileNames"/>
+	        <set-variable value="#[output application/java
+---
+payload.importDate]" doc:name="Set Variable" doc:id="7490e343-50d4-4109-9732-04d9cef03f85" variableName="importDate"/>
+	        <foreach doc:name="Iterate products" doc:id="bafa1d18-4707-4e11-aa79-dabe4ee5a77b"
+	                 collection="#[payload.products]">
+	            <logger level="INFO" doc:name="Logger" doc:id="47c1b824-0c1c-49ab-b86a-5c6f46d4a24b"
+	                    message='Saving product to the sftp server:  #[payload]'/>
+	            <logger level="INFO" doc:name="Logger" doc:id="360ad01c-ba9e-4079-9085-fe2da41da094"
+	                    message="Validating product"/>
+	            <choice doc:name="Choice" doc:id="038ed03d-04ee-491a-b403-b89330c023cc">
+	                <when expression="#[payload.details != null]">
+	                    <ee:transform doc:name="Validate Product" doc:id="3b3bb2bc-54c6-45ec-b82c-aa82233ca0fb">
+	                        <ee:message>
+	                        </ee:message>
+	                        <ee:variables>
+	                            <ee:set-variable variableName="nonValidFields"><![CDATA[%dw 2.0
+output application/java
+import keySet from dw::core::Objects
+---
+keySet (
+	{
+		height: payload.details.height > 0,
+		width: payload.details.width > 0,
+		depth: payload.details.depth > 0,
+		weight: payload.details.weight > 0
+	} filterObject ((value, key) -> !value)
+) default []]]>
+	                            </ee:set-variable>
+	                        </ee:variables>
+	                    </ee:transform>
+	                </when>
+	                <otherwise>
+	                    <set-variable value="#[output application/java
+---
+[]]" doc:name="Set Non Valid Product Fields" doc:id="509752e1-7ba9-4397-b670-a1d2ba40718f"
+	                                  variableName="nonValidFields"/>
+	                </otherwise>
+	            </choice>
+	            <choice doc:name="Choice" doc:id="c779f2c6-4675-4b10-8317-14b205c73ba0">
+	                <when expression="#[sizeOf(vars.nonValidFields) &gt; 0]">
+	                    <raise-error doc:name="Raise error" doc:id="cf1150f2-31d9-403c-a44a-088a22da1f4a"
+	                                 type="PRECONDITIONS:INCORRECT_FIELD"
+	                                 description="#[output application/java --- &quot;Field(s) $(vars.nonValidFields joinBy(', ')) value(s) must be greater than 0.&quot;]"/>
+	                </when>
+	            </choice>
+	            <set-variable value='#[output application/java
+---
+payload.id as String ++ "_" ++ payload.productName ++ "_" ++ vars.importDate ++ ".csv"]' doc:name="FileName"
+	                          doc:id="63793cb5-ceb7-4d58-bf65-07f69f59dfa0" variableName="fileName"/>
+	            <logger level="INFO" doc:name="Logger" doc:id="9c697473-58f7-4e1d-b525-98c7c93a7443"
+	                    message="Generated file name: #[vars.fileName]"/>
+	            <ee:transform doc:name="Convert product to CSV" doc:id="02695ced-71d4-4bdd-83da-2066c0fc78bb">
+	                <ee:message>
+	                    <ee:set-payload><![CDATA[%dw 2.0
+output application/csv headerLineNumber = 0 , header = true , separator = ";"
+---
+{
+	id: payload.id as String default "",
+	name: payload.productName default "",
+	description: payload.description default "",
+	height: payload.details.height as String default "",
+	width: payload.details.width as String default "",
+	depth: payload.details.depth as String default "",
+	weight: payload.details.weight as String default ""
+}]]>
+	                    </ee:set-payload>
+	                </ee:message>
+	            </ee:transform>
+	            <sftp:write doc:name="Write" doc:id="6db976dc-f162-4aae-8d57-a4171cff317b" config-ref="SFTP_Config" path='#[output application/java
+---
+p("sftp.path") ++ "/" ++ vars.fileName]'/>
+	            <logger level="INFO" doc:name="Logger" doc:id="f1046776-56c9-4ce2-9d0b-96adec07a433"
+	                    message="File #[vars.fileName] has been saved."/>
+	            <ee:transform doc:name="Transform Message" doc:id="365fb13c-5910-4df0-b205-c3473134ac43">
+	                <ee:message>
+	                </ee:message>
+	                <ee:variables>
+	                    <ee:set-variable variableName="fileNames"><![CDATA[%dw 2.0
+output application/json
+---
+vars.fileNames << vars.fileName]]>
+	                    </ee:set-variable>
+	                </ee:variables>
+	            </ee:transform>
+	        </foreach>
+	        <set-payload value="#[output application/json
+---
+{
+	filesNames: vars.fileNames
+}]" doc:name="Set Payload" doc:id="78e1e9d4-6bbb-4bb4-a7cc-6e9fe7ca9845"/>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate"
+	                                doc:id="d4cd9e08-d4f4-49f2-a5ea-3bc757e3039e" type="ANY">
+	                <logger level="INFO" doc:name="Logger" doc:id="8313b354-dd63-4fd6-9892-77fcadca7070"
+	                        message="Error arised. Deleting already saved files: #[vars.fileNames]"/>
+	                <foreach doc:name="For Each" doc:id="824ae998-7ad3-4626-9925-900b549f03c9"
+	                         collection="#[vars.fileNames]">
+	                    <sftp:delete doc:name="Delete" doc:id="d8df2ff7-2273-4bde-9615-c3bd0ae0b348"
+	                                 config-ref="SFTP_Config" path='#[output application/java
+---
+p("sftp.path") ++ "/" ++ payload]'/>
+	                </foreach>
+	                <ee:transform doc:name="Set Error Message" doc:id="27ef60ac-41d8-4d5d-b631-0943a7fa846f"
+	                              xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	                    <ee:message>
+	                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: error.description}]]>
+	                        </ee:set-payload>
+	                    </ee:message>
+	                    <ee:variables>
+	                        <ee:set-variable variableName="httpStatus"><![CDATA[if (error.errorType.asString ~= 'PRECONDITIONS:INCORRECT_FIELD') 400 else 500]]></ee:set-variable>
+	                    </ee:variables>
+	                </ee:transform>
+	            </on-error-propagate>
+			</error-handler>			
+		</try>
+	</sub-flow>
+</mule>
